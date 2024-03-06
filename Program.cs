@@ -1,44 +1,83 @@
+using Microsoft.AspNetCore.Diagnostics;
+using SkiaSharp;
+using System.Text.RegularExpressions;
+
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+var random = new Random();
+var paint = new SKPaint();
+var imageInfo = new SKImageInfo(width:1920,height:1080,alphaType: SKAlphaType.Opaque, colorType: SKColorType.Rgb888x);
+var hexColorPattern = "([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
+var hexColorRegex = new Regex(hexColorPattern);
+var getRandomColor = () => {
+    return SKColor.FromHsl(random.Next(0, 360), 50, 80);
 };
 
-app.MapGet("/weatherforecast", () =>
+var getComplementaryColor = (SKColor color) => {
+    color.ToHsl(out var h, out var s, out var l);
+    h = (h + 180) % 360;
+    return SKColor.FromHsl(h, s, l);
+};
+var isValidHexColor = (string? colorStr) => {
+    if(colorStr is null)
+    {
+        return true;
+    }
+    return hexColorRegex.IsMatch(colorStr);
+};
+
+var handler = (string? b,string? f,string? t,int h=1080, int w=1920) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    if(!isValidHexColor(b) || !isValidHexColor(f))
+    {
+        return Results.BadRequest("HEX颜色格式错误！");
+    }
+
+    if (w <= 0 || h <= 0)
+    {
+        return Results.BadRequest("尺寸必须是正数！");
+    }
+
+    var trueImageInfo = imageInfo.WithSize(w, h);
+
+    using (var surface = SKSurface.Create(trueImageInfo))
+    {
+        var canvas = surface.Canvas;
+        var bgColor = string.IsNullOrEmpty(b) ? getRandomColor() : SKColor.Parse(b);
+        var textColor = string.IsNullOrEmpty(f) ? getComplementaryColor(bgColor) : SKColor.Parse(f);
+        var trueText =t ?? $"{w}x{h}";
+        canvas.Clear(bgColor);
+
+        paint.Color = textColor;
+        paint.TextSize = w/trueText.Length;
+
+        var textBounds = new SKRect();
+        paint.MeasureText(trueText, ref textBounds);
+        var x = (w - textBounds.Width) / 2;
+        var y = (h + textBounds.Height) / 2;
+        canvas.DrawText(trueText, x, y, paint);
+
+        using (var image = surface.Snapshot())
+        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+        {
+            return Results.File(data.ToArray(), "image/png");
+        }
+    }
+};
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        if (exception is BadHttpRequestException badHttpRequestException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(badHttpRequestException.Message);
+        }
+    });
+});
+app.MapGet("/placeholder", handler);
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
