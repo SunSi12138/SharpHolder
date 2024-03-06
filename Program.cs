@@ -1,24 +1,48 @@
-using Microsoft.AspNetCore.Diagnostics;
 using SkiaSharp;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Text.RegularExpressions;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
+
 var random = new Random();
 var paint = new SKPaint();
 var imageInfo = new SKImageInfo(width:1920,height:1080,alphaType: SKAlphaType.Opaque, colorType: SKColorType.Rgb888x);
 var hexColorPattern = "([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
 var hexColorRegex = new Regex(hexColorPattern);
-var getRandomColor = () => {
-    return SKColor.FromHsl(random.Next(0, 360), 50, 80);
-};
 
-var getComplementaryColor = (SKColor color) => {
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        if (exception is BadHttpRequestException badHttpRequestException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(badHttpRequestException.Message);
+        }
+    });
+});
+app.MapGet("/placeholder", GetHandler);
+
+app.Run();
+
+
+
+SKColor GetComplementaryColor (SKColor color) {
     color.ToHsl(out var h, out var s, out var l);
     h = (h + 180) % 360;
     return SKColor.FromHsl(h, s, l);
-};
-var isValidHexColor = (string? colorStr) => {
+}
+
+SKColor getRandomColor(){
+    return SKColor.FromHsl(random.Next(0, 360), 50, 80);
+}
+
+
+bool IsValidHexColor(string? colorStr) {
     if(colorStr is null)
     {
         return true;
@@ -26,16 +50,16 @@ var isValidHexColor = (string? colorStr) => {
     return hexColorRegex.IsMatch(colorStr);
 };
 
-var handler = (string? b,string? f,string? t,int h=1080, int w=1920) =>
+IResult GetHandler (string? b,string? f,string? t,int h=1080, int w=1920)
 {
-    if(!isValidHexColor(b) || !isValidHexColor(f))
+    if(!IsValidHexColor(b) || !IsValidHexColor(f))
     {
-        return Results.BadRequest("HEX颜色格式错误！");
+        return Results.StatusCode(400);
     }
 
     if (w <= 0 || h <= 0)
     {
-        return Results.BadRequest("尺寸必须是正数！");
+        return Results.StatusCode(400);
     }
 
     var trueImageInfo = imageInfo.WithSize(w, h);
@@ -44,7 +68,7 @@ var handler = (string? b,string? f,string? t,int h=1080, int w=1920) =>
     {
         var canvas = surface.Canvas;
         var bgColor = string.IsNullOrEmpty(b) ? getRandomColor() : SKColor.Parse(b);
-        var textColor = string.IsNullOrEmpty(f) ? getComplementaryColor(bgColor) : SKColor.Parse(f);
+        var textColor = string.IsNullOrEmpty(f) ? GetComplementaryColor(bgColor) : SKColor.Parse(f);
         var trueText =t ?? $"{w}x{h}";
         canvas.Clear(bgColor);
 
@@ -63,21 +87,4 @@ var handler = (string? b,string? f,string? t,int h=1080, int w=1920) =>
             return Results.File(data.ToArray(), "image/png");
         }
     }
-};
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-        var exception = exceptionHandlerPathFeature?.Error;
-
-        if (exception is BadHttpRequestException badHttpRequestException)
-        {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(badHttpRequestException.Message);
-        }
-    });
-});
-app.MapGet("/placeholder", handler);
-
-app.Run();
+}
