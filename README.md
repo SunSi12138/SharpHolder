@@ -22,3 +22,11 @@
 
 如果浏览器因为cache原因，可以自行添加一些随机参数来获取不同的图片
 例如http://localhost/placeholder?r={随机id}
+
+打包NativeAot请使用：
+dotnet publish -c Release -r win-x64 /p:PublishAot=true
+可选linux-x64，osx-arm64
+
+TODO：
+1.支持显示中文
+2.支持透明背景
