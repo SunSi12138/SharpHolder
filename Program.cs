@@ -6,7 +6,6 @@ var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
 
 var random = new Random();
-var paint = new SKPaint();
 var imageInfo = new SKImageInfo(width:1920,height:1080,alphaType: SKAlphaType.Opaque, colorType: SKColorType.Rgb888x);
 var hexColorPattern = "([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
 var hexColorRegex = new Regex(hexColorPattern);
@@ -67,6 +66,7 @@ IResult GetHandler (string? b,string? f,string? t,int h=1080, int w=1920)
     using (var surface = SKSurface.Create(trueImageInfo))
     {
         var canvas = surface.Canvas;
+        var paint = new SKPaint();
         var bgColor = string.IsNullOrEmpty(b) ? getRandomColor() : SKColor.Parse(b);
         var textColor = string.IsNullOrEmpty(f) ? GetComplementaryColor(bgColor) : SKColor.Parse(f);
         var trueText =t ?? $"{w}x{h}";
