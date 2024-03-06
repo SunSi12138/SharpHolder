@@ -1,6 +1,9 @@
 # SharpHolder
 
 这是一个用于生成占位图的C#服务器，使用SkiaShapr绘制图片
+启动方式：
+./SharpHolder #Linux或者macos
+./SharpHolder.exe #windows
 
 默认监听http://localhost:5000
 可以使用启动参数"--urls {监听地址}"指定监听ip
