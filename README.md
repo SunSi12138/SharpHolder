@@ -16,3 +16,6 @@
 
 图片默认显示文字为图片的大小（如1920x1080）
 可以使用http://localhost/placeholder?t={文字}设置文字内容
+
+如果浏览器因为cache原因，可以自行添加一些随机参数来获取不同的图片
+例如http://localhost/placeholder?r={随机id}
