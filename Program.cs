@@ -50,14 +50,14 @@ bool IsValidHexColor(string? colorStr) {
     return hexColorRegex.IsMatch(colorStr);
 };
 
-async Task<IResult> GetHandler (string? b,string? f,string? t,string? e,int? d,int h=1080, int w=1920)
+async Task<IResult> GetHandler (string? b,string? f,string? t,string? e,int? d,int q=100,int h=1080, int w=1920)
 {
     if(!IsValidHexColor(b) || !IsValidHexColor(f))
     {
         return Results.StatusCode(400);
     }
 
-    if (w <= 0 || h <= 0)
+    if (w <= 0 || h <= 0 || q<0 || q>100 || d<0 || d>10000)
     {
         return Results.StatusCode(400);
     }
@@ -85,7 +85,7 @@ async Task<IResult> GetHandler (string? b,string? f,string? t,string? e,int? d,i
         var encode = e is null? SKEncodedImageFormat.Png : Enum.TryParse<SKEncodedImageFormat>(e, true, out var format) ? format : SKEncodedImageFormat.Png;
         
         using (var image = surface.Snapshot())
-        using (var data = image.Encode(encode, 100))
+        using (var data = image.Encode(encode, q))
         {   
             if(d.HasValue)
             {
