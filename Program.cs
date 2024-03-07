@@ -89,7 +89,7 @@ async Task<IResult> GetHandler (string? b,string? f,string? t,string? e,int? d,i
         {   
             if(d.HasValue)
             {
-                await Task.Delay(d.Value-90);
+                await Task.Delay(d.Value);
             }
             return Results.File(data.ToArray(), $"image/{encode.ToString().ToLower()}");
         }
