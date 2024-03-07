@@ -33,6 +33,7 @@ app.Run();
 SKColor GetComplementaryColor (SKColor color) {
     color.ToHsl(out var h, out var s, out var l);
     h = (h + 180) % 360;
+    l = l > 50 ? l - 50 : l + 50;
     return SKColor.FromHsl(h, s, l);
 }
 
