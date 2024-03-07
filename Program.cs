@@ -6,7 +6,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
 
 var random = new Random();
-var imageInfo = new SKImageInfo(width:1920,height:1080,alphaType: SKAlphaType.Opaque, colorType: SKColorType.Rgb888x);
+var opaqueImageInfo = new SKImageInfo(width:1920,height:1080,alphaType: SKAlphaType.Opaque, colorType: SKColorType.Rgb888x);
 var hexColorPattern = "([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
 var hexColorRegex = new Regex(hexColorPattern);
 
@@ -49,7 +49,7 @@ bool IsValidHexColor(string? colorStr) {
     return hexColorRegex.IsMatch(colorStr);
 };
 
-IResult GetHandler (string? b,string? f,string? t,int h=1080, int w=1920)
+async Task<IResult> GetHandler (string? b,string? f,string? t,int? d,int h=1080, int w=1920)
 {
     if(!IsValidHexColor(b) || !IsValidHexColor(f))
     {
@@ -61,7 +61,7 @@ IResult GetHandler (string? b,string? f,string? t,int h=1080, int w=1920)
         return Results.StatusCode(400);
     }
 
-    var trueImageInfo = imageInfo.WithSize(w, h);
+    var trueImageInfo = opaqueImageInfo.WithSize(w, h);
 
     using (var surface = SKSurface.Create(trueImageInfo))
     {
@@ -83,7 +83,11 @@ IResult GetHandler (string? b,string? f,string? t,int h=1080, int w=1920)
 
         using (var image = surface.Snapshot())
         using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-        {
+        {   
+            if(d.HasValue)
+            {
+                await Task.Delay(d.Value-90);
+            }
             return Results.File(data.ToArray(), "image/png");
         }
     }
