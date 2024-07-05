@@ -18,25 +18,17 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build -c Release --no-restore
-    - name: Publish for Windows
-      run: dotnet publish -c Release -r win-x64 -o ./publish/win-x64 /p:PublishAot=true
     - name: Publish for Linux x64
       run: dotnet publish -c Release -r linux-x64 -o ./publish/linux-x64 /p:PublishAot=true
     - name: Publish for Linux ARM64
       run: dotnet publish -c Release -r linux-arm64 -o ./publish/linux-arm64 /p:PublishAot=true
-    - name: Publish for OSX ARM64
-      run: dotnet publish -c Release -r osx-arm64 -o ./publish/osx-arm64 /p:PublishAot=true
     - name: Extract tag name
       id: extract_tag
       run: echo "tag=${{ github.ref_name }}" >> $GITHUB_ENV
-    - name: Zip Windows Publish Output
-      run: zip -r publish/win-x64/SharpHolder-${{ env.tag }}-win-x64.zip publish/win-x64/
     - name: Zip Linux x64 Publish Output
       run: zip -r publish/linux-x64/SharpHolder-${{ env.tag }}-linux-x64.zip publish/linux-x64/
     - name: Zip Linux ARM64 Publish Output
       run: zip -r publish/linux-arm64/SharpHolder-${{ env.tag }}-linux-arm64.zip publish/linux-arm64/
-    - name: Zip OSX ARM64 Publish Output
-      run: zip -r publish/osx-arm64/SharpHolder-${{ env.tag }}-osx-arm64.zip publish/osx-arm64/
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1.0.0
@@ -47,15 +39,6 @@ jobs:
         release_name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
-    - name: Upload Windows Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./publish/win-x64/SharpHolder-${{ env.tag }}-win-x64.zip
-        asset_name: SharpHolder-${{ env.tag }}-win-x64.zip
-        asset_content_type: application/zip
     - name: Upload Linux x64 Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -73,13 +56,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./publish/linux-arm64/SharpHolder-${{ env.tag }}-linux-arm64.zip
         asset_name: SharpHolder-${{ env.tag }}-linux-arm64.zip
-        asset_content_type: application/zip
-    - name: Upload OSX ARM64 Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./publish/osx-arm64/SharpHolder-${{ env.tag }}-osx-arm64.zip
-        asset_name: SharpHolder-${{ env.tag }}-osx-arm64.zip
         asset_content_type: application/zip
