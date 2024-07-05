@@ -19,13 +19,13 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Publish for Windows
-      run: dotnet publish -c Release --r win-x64 -o ./publish/win-x64 /p:PublishAot=true
+      run: dotnet publish -c Release -r win-x64 -o ./publish/win-x64 /p:PublishAot=true
     - name: Publish for Linux x64
-      run: dotnet publish -c Release --r linux-x64 -o ./publish/linux-x64 /p:PublishAot=true
+      run: dotnet publish -c Release -r linux-x64 -o ./publish/linux-x64 /p:PublishAot=true
     - name: Publish for Linux ARM64
-      run: dotnet publish -c Release --r linux-arm64 -o ./publish/linux-arm64 /p:PublishAot=true
+      run: dotnet publish -c Release -r linux-arm64 -o ./publish/linux-arm64 /p:PublishAot=true
     - name: Publish for OSX ARM64
-      run: dotnet publish -c Release --r osx-arm64 -o ./publish/osx-arm64 /p:PublishAot=true
+      run: dotnet publish -c Release -r osx-arm64 -o ./publish/osx-arm64 /p:PublishAot=true
     - name: Extract tag name
       id: extract_tag
       run: echo "tag=${{ github.ref_name }}" >> $GITHUB_ENV
