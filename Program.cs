@@ -2,7 +2,7 @@ using SkiaSharp;
 using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-builder.Logging.SetMinimumLevel(LogLevel.None);
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
 var app = builder.Build();
 
 var random = new Random();
