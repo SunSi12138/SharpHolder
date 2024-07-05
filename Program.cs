@@ -1,8 +1,8 @@
 using SkiaSharp;
 using Microsoft.AspNetCore.Diagnostics;
-using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateSlimBuilder(args);
+builder.Logging.SetMinimumLevel(LogLevel.None);
 var app = builder.Build();
 
 var random = new Random();
@@ -96,26 +96,24 @@ async Task GetHandler (HttpContext httpContext,string? b,string? f,string? t,str
     var imageData = data.ToArray();
 
     httpContext.Response.ContentType = $"image/{encode.ToString().ToLower()}";
+    httpContext.Response.Headers.CacheControl = "no-cache no-store must-revalidate";
+    httpContext.Response.Headers.Expires = "-1";
+    
     if (d.HasValue)
     {
-        // 总延迟时间（毫秒）
         int totalDelay = d.Value;
-        int idealChunkTime = 10; // 每块理想的发送时间（毫秒）
+        int idealChunkTime = 10;
         int chunks = totalDelay / idealChunkTime;
-        // 确保至少有一块
         chunks = Math.Max(chunks, 1);
 
-        // 计算每块的大小
         int chunkSize = imageData.Length / chunks;
-        // 计算实际每次发送之间的延迟时间
         int delayPerChunk = totalDelay / chunks;
-
         for (int i = 0; i < chunks; i++)
         {
             int offset = i * chunkSize;
-            int length = (i < chunks - 1) ? chunkSize : imageData.Length - offset; // 最后一块可能需要调整长度
+            int length = (i < chunks - 1) ? chunkSize : imageData.Length - offset; 
 
-            await httpContext.Response.Body.WriteAsync(imageData, offset, length);
+            await httpContext.Response.Body.WriteAsync(imageData.AsMemory(offset, length));
             await httpContext.Response.Body.FlushAsync();
             await Task.Delay(delayPerChunk);
         }
